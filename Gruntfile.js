@@ -8,17 +8,27 @@ module.exports = function (grunt) {
     require('quiet-grunt');
   }
 
+  /**
+   * Load common tasks for legacy and normal tests
+   */
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-mocha-test');
+  grunt.loadNpmTasks('grunt-endline');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+
   // Project configuration.
   var config = {
     pkg: grunt.file.readJSON('package.json'),
 
     concat: {
-      options: {
-        sourceMap: true,
-        banner: ';/*! <%= pkg.name %> v <%= pkg.version %> - <%= grunt.template.today("dd-mm-yyyy") %> */\n(function(){\n',
-        footer: '}).call(this);\n'
-      },
       dist: {
+        options: {
+          sourceMap: true,
+          banner: ';/*! <%= pkg.name %> v <%= pkg.version %> - <%= grunt.template.today("dd-mm-yyyy") %> */\n(function(){\n',
+          footer: '}).call(this);\n'
+        },
         src: [
           'src/options.js',
           'src/showdown.js',
@@ -29,6 +39,12 @@ module.exports = function (grunt) {
           'src/loader.js'
         ],
         dest: 'dist/<%= pkg.name %>.js'
+      },
+      cli: {
+        src: [
+          'src/cli/cli.js'
+        ],
+        dest: 'bin/showdown.js'
       },
       test: {
         src: '<%= concat.dist.src %>',
@@ -42,13 +58,22 @@ module.exports = function (grunt) {
     clean: ['.build/'],
 
     uglify: {
-      options: {
-        sourceMap: true,
-        banner: '/*! <%= pkg.name %> v <%= pkg.version %> - <%= grunt.template.today("dd-mm-yyyy") %> */'
-      },
       dist: {
+        options: {
+          sourceMap: true,
+          banner: '/*! <%= pkg.name %> v <%= pkg.version %> - <%= grunt.template.today("dd-mm-yyyy") %> */'
+        },
         files: {
           'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
+        }
+      },
+      cli: {
+        options: {
+          sourceMap: false,
+          banner: '#!/usr/bin/env node'
+        },
+        files: {
+          'bin/showdown.js': ['<%= concat.cli.dest %>']
         }
       }
     },
@@ -64,8 +89,7 @@ module.exports = function (grunt) {
 
     jshint: {
       options: {
-        jshintrc: '.jshintrc',
-        reporterOutput: ''
+        jshintrc: '.jshintrc'
       },
       files: [
         'Gruntfile.js',
@@ -110,48 +134,46 @@ module.exports = function (grunt) {
       }
     },
 
-    simplemocha: {
+    mochaTest: {
       functional: {
         src: 'test/functional/**/*.js',
         options: {
-          globals: ['should'],
           timeout: 3000,
           ignoreLeaks: true,
-          reporter: 'spec'
+          reporter: 'spec',
+          require: ['test/bootstrap.js']
         }
       },
       unit: {
         src: 'test/unit/**/*.js',
         options: {
-          globals: ['should'],
           timeout: 3000,
           ignoreLeaks: true,
-          reporter: 'spec'
+          reporter: 'spec',
+          require: ['test/bootstrap.js']
         }
       },
       single: {
-        src: 'test/node/**/*.js',
         options: {
-          globals: ['should'],
           timeout: 3000,
           ignoreLeaks: false,
-          reporter: 'spec'
+          reporter: 'spec',
+          require: ['test/bootstrap.js']
+        }
+      },
+      cli: {
+        src: 'test/unit/cli.js',
+        options: {
+          timeout: 3000,
+          ignoreLeaks: false,
+          reporter: 'spec',
+          require: ['test/bootstrap.js']
         }
       }
     }
   };
 
   grunt.initConfig(config);
-
-  /**
-   * Load common tasks for legacy and normal tests
-   */
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-simple-mocha');
-  grunt.loadNpmTasks('grunt-endline');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
 
   /**
    * Generate Changelog
@@ -185,32 +207,31 @@ module.exports = function (grunt) {
   /**
    * Run a single test
    */
-  grunt.registerTask('single-test', function (grep) {
+  grunt.registerTask('single-test', function (file) {
     'use strict';
     grunt.config.merge({
-      simplemocha: {
+      mochaTest: {
         single: {
-          options: {
-            grep: grep
-          }
+          src: file
         }
       }
     });
 
-    grunt.task.run(['lint', 'concat:test', 'simplemocha:single', 'clean']);
+    grunt.task.run(['lint', 'concat:test', 'mochaTest:single', 'clean']);
   });
 
   /**
    * Tasks
    */
+  grunt.registerTask('test', ['clean', 'lint', 'concat:test', 'mochaTest:unit', 'mochaTest:functional', 'clean']);
+  grunt.registerTask('test-functional', ['concat:test', 'mochaTest:functional', 'clean']);
+  grunt.registerTask('test-unit', ['concat:test', 'mochaTest:unit', 'clean']);
+  grunt.registerTask('test-cli', ['clean', 'lint', 'concat:test', 'mochaTest:cli', 'clean']);
 
-  grunt.registerTask('test', ['clean', 'lint', 'concat:test', 'simplemocha:unit', 'simplemocha:functional', 'clean']);
-  grunt.registerTask('test-functional', ['concat:test', 'simplemocha:functional', 'clean']);
-  grunt.registerTask('test-unit', ['concat:test', 'simplemocha:unit', 'clean']);
   grunt.registerTask('performance', ['concat:test', 'performancejs', 'clean']);
-  grunt.registerTask('build', ['test', 'concat:dist', 'uglify', 'endline']);
+  grunt.registerTask('build', ['test', 'concat:dist', 'concat:cli', 'uglify:dist', 'uglify:cli', 'endline']);
   grunt.registerTask('build-without-test', ['concat:dist', 'uglify', 'endline']);
-  grunt.registerTask('prep-release', ['build', 'generate-changelog']);
+  grunt.registerTask('prep-release', ['build', 'performance', 'generate-changelog']);
 
   // Default task(s).
   grunt.registerTask('default', ['test']);

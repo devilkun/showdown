@@ -216,7 +216,7 @@ showdown.Converter = function (converterOptions) {
    * @param {string} text Text
    * @param {{}} options Converter Options
    * @param {{}} globals Converter globals
-   * @param {{}} pParams extra params for event
+   * @param {{}} [pParams] extra params for event
    * @returns showdown.helper.Event
    * @private
    */
@@ -386,7 +386,7 @@ showdown.Converter = function (converterOptions) {
         mdDoc = '';
 
     for (var i = 0; i < nodes.length; i++) {
-      mdDoc += showdown.subParser('makeMarkdown.node')(nodes[i], globals);
+      mdDoc += showdown.subParser('makeMarkdown.node')(nodes[i], options, globals);
     }
 
     function clean (node) {

@@ -2,31 +2,28 @@
 
 ![Build Status: Linux](https://github.com/showdownjs/showdown/actions/workflows/node.linux.yml/badge.svg)
 ![Build Status: Windows](https://github.com/showdownjs/showdown/actions/workflows/node.win.yml/badge.svg)
+[![Browserstack Tests](https://automate.browserstack.com/badge.svg?badge_key=VTIvTDNqWVdaTHljbS9RNmYrcTBiL0Uxc3dkRDhaN1dPaXpPb2VOc1B2VT0tLU1Ib09kVjVzMjhFcHExbWFSWlJEV3c9PQ==--1fb92e1730e4a00630d17d533822de6403ca65ec)](https://automate.browserstack.com/public-build/VTIvTDNqWVdaTHljbS9RNmYrcTBiL0Uxc3dkRDhaN1dPaXpPb2VOc1B2VT0tLU1Ib09kVjVzMjhFcHExbWFSWlJEV3c9PQ==--1fb92e1730e4a00630d17d533822de6403ca65ec)
 [![npm version](https://badge.fury.io/js/showdown.svg)](http://badge.fury.io/js/showdown)
 [![Bower version](https://badge.fury.io/bo/showdown.svg)](http://badge.fury.io/bo/showdown)
-[![Join the chat at https://gitter.im/showdownjs/showdown](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/showdownjs/showdown?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Greenkeeper badge](https://badges.greenkeeper.io/showdownjs/showdown.svg)](https://greenkeeper.io/)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/tiviesantos)
 
 ------
 
-Showdown is a Javascript Markdown to HTML converter, based on the original works by John Gruber.
-Showdown can be used client side (in the browser) or server side (with NodeJs).
+Showdown is a JavaScript Markdown to HTML converter, based on the original works by John Gruber.
+Showdown can be used client side (in the browser) or server side (with Node.js).
 
 ## Live DEMO
 
-Check a live Demo here http://demo.showdownjs.com/
-
-## [![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=11141581)
+Check out a live demo here: http://demo.showdownjs.com/
 
 As you know, ShowdownJS is a free library and it will remain free forever. However, maintaining and improving the library costs time and money.
 
-If you like our work and find our library useful, please donate through [patreon](https://www.patreon.com/showdownjs) or directly through [paypal](https://www.paypal.me/tiviesantos)!! Your contribution will be greatly appreciated and help me continue to develop this awesome library.
+If you like our work and find our library useful, please donate through [PayPal](https://www.paypal.me/tiviesantos)! Your contribution will be greatly appreciated and help me continue to develop this awesome library.
 
 ## License
 
-ShowdownJS v 2.0 is release under the MIT version.
-Previous versions are release under BSD.
+ShowdownJS v 2.0 is released under the MIT license.
+Previous versions are released under BSD.
 
 ## Who uses Showdown (or a fork)
 
@@ -42,7 +39,7 @@ Previous versions are release under BSD.
 
 ### Download tarball
 
-You can download the latest release tarball directly from [releases][releases]
+You can download the latest release tarball directly from [releases][releases].
 
 ### Bower
 
@@ -56,7 +53,7 @@ You can download the latest release tarball directly from [releases][releases]
 
     PM> Install-Package showdownjs
 
-The NuGet Packages can be [found here](https://www.nuget.org/packages/showdownjs/).
+The NuGet Packages can be found [here](https://www.nuget.org/packages/showdownjs/).
 
 ### CDN
 
@@ -93,7 +90,7 @@ The converter itself might even work in things that aren't web browsers, like Ac
 
 ## Node compatibility
 
-Showdown is intended to work on any supported node.js version (see the [node.js releases schedule](https://nodejs.org/en/about/releases/). The code may work with previous versions of node.js, but no accomidations are made to ensure it does. 
+Showdown is intended to work on any supported Node.js version (see the [Node.js releases schedule](https://nodejs.org/en/about/releases/). The code may work with previous versions of Node.js, but no accomidations are made to ensure it does. 
 
 
 ## Legacy version
@@ -369,6 +366,10 @@ var defaultOptions = showdown.getDefaultOptions();
 
  * **splitAdjacentBlockquotes**: (boolean) [default false] Split adjacent blockquote blocks.(since v.1.8.6)
 
+ * **moreStyling**: (boolean) [default false] Adds some useful classes for css styling. (since v2.0.1)
+    
+    - Tasklists: Adds the class `task-list-item-complete` to completed tasks items in GFM tasklists.
+
 **NOTE**: Please note that until **version 1.6.0**, all of these options are ***DISABLED*** by default in the cli tool.
 
 
@@ -445,9 +446,22 @@ var showdown    = require('showdown'),
     converter = new showdown.Converter({ extensions: ['myExtension'] });
 ```
 
+## Building
+
+Building your clone of the repository is easy.
+> Prerequesites: [Node.js](https://nodejs.org/) v12, [npm](https://www.npmjs.com/package/npm) and [npx](https://www.npmjs.com/package/npx) must be installed.
+
+1. run `npm install`.
+2. run `npx grunt build` (see [`Gruntfile.js`](/Gruntfile.js)). This command:
+
+    1. Cleans the repo.
+    2. Checks code quality ([JSHint](https://jshint.com/) and [ESLint](https://eslint.org/)).
+    3. Runs tests.
+    4. Creates the [distributable](/showdown.js) and [minified](/showdown.min.js) files in the [`dist`](/dist) folder.
+
 ## Tests
 
-A suite of tests is available which require node.js.  Once node is installed, run the following command from
+A suite of tests is available which require Node.js.  Once Node is installed, run the following command from
 the project root to install the dependencies:
 
     npm install
@@ -472,28 +486,26 @@ Pull Request.
 PRs are awesome. However, before you submit your pull request consider the following guidelines:
 
  - Search GitHub for an open or closed Pull Request that relates to your submission. You don't want to duplicate effort.
- - When issuing PRs that change code, make your changes in a new git branch based on master:
+ - When issuing PRs that change code, make your changes in a new git branch based on **develop**:
 
    ```bash
-   git checkout -b my-fix-branch master
+   git checkout -b my-fix-branch develop
    ```
 
- - Documentation (i.e: README.md) changes can be made directly against master.
  - Run the full test suite before submitting and make sure all tests pass (obviously =P).
- - Try to follow our [**coding style rules**][coding-rules].
-   Breaking them prevents the PR to pass the tests.
+ - Try to follow our [**coding style rules**][coding-rules]. Breaking them prevents the PR to pass the tests.
  - Refrain from fixing multiple issues in the same pull request. It's preferable to open multiple small PRs instead of one
    hard to review big one.
- - If the PR introduces a new feature or fixes an issue, please add the appropriate test case.
- - We use commit notes to generate the changelog. It's extremely helpful if your commit messages adhere to the
- [**AngularJS Git Commit Guidelines**][ng-commit-guide].
+ - If the PR introduces a new feature or fixes an issue, **please add the appropriate test case**.
+ - We use [conventional commit][conventional-commits] notes to generate the changelog that follow the conventional changelog spec. It's extremely helpful if your commit messages adhere to these [Commit Guidelines][conventional-commits].
+ - Don't forget to add your name to the [CREDITS.md](https://github.com/showdownjs/showdown/blob/master/CREDITS.md) file. We like to give credit were it's due.
  - If we suggest changes then:
      - Make the required updates.
-     - Re-run the Angular test suite to ensure tests are still passing.
+     - Re-run the test suite to ensure tests are still passing.
      - Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
 
      ```bash
-     git rebase master -i
+     git rebase develop -i
      git push origin my-fix-branch -f
      ```
  - After your pull request is merged, you can safely delete your branch.
@@ -524,5 +536,5 @@ Showdown is powered by:<br/>
 [xss-wiki]: https://github.com/showdownjs/showdown/wiki/Markdown's-XSS-Vulnerability-(and-how-to-mitigate-it)
 [ext-wiki]: https://github.com/showdownjs/showdown/wiki/extensions
 [coding-rules]: https://github.com/showdownjs/code-style/blob/master/README.md
-[ng-commit-guide]: https://github.com/showdownjs/code-style/blob/master/README.md#commit-message-convention
+[conventional-commits]: https://www.conventionalcommits.org/
 [boilerplate-repo]: https://github.com/showdownjs/extension-boilerplate

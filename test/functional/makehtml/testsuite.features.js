@@ -19,6 +19,7 @@ var bootstrap = require('./makehtml.bootstrap.js'),
     completeHTMLOutputSuite = bootstrap.getTestSuite('test/functional/makehtml/cases/features/completeHTMLOutput/'),
     metadataSuite = bootstrap.getTestSuite('test/functional/makehtml/cases/features/metadata/'),
     splitAdjacentBlockquotesSuite = bootstrap.getTestSuite('test/functional/makehtml/cases/features/splitAdjacentBlockquotes/'),
+    moreStyling = bootstrap.getTestSuite('test/functional/makehtml/cases/features/moreStyling/'),
     http = require('http'),
     https = require('https'),
     expect = require('chai').expect;
@@ -99,6 +100,8 @@ describe('makeHtml() features testsuite', function () {
         converter = new showdown.Converter({openLinksInNewWindow: true});
       } else if (testsuite[i].name === '#355.simplifiedAutoLink-URLs-inside-parenthesis-followed-by-another-character-are-not-parsed-correctly') {
         converter = new showdown.Converter({simplifiedAutoLink: true});
+      } else if (testsuite[i].name === '#709.allow-whitespaces-after-end-in-metadata') {
+        converter = new showdown.Converter({metadata: true});
       } else if (testsuite[i].name === 'relativePathBaseUrl') {
         converter = new showdown.Converter({relativePathBaseUrl: 'http://my.site.com/'});
       } else {
@@ -198,7 +201,7 @@ describe('makeHtml() features testsuite', function () {
 
     function testImageUrlExists (imgUrl) {
       // Strip the quotes
-      imgUrl = imgUrl.substr(0, imgUrl.length - 1).substr(1);
+      imgUrl = imgUrl.slice(1, -1);
       return function (done) {
         (imgUrl.startsWith('http://') ? http : https).get(imgUrl, function (res) {
           expect(res.statusCode).to.equal(200);
@@ -320,4 +323,16 @@ describe('makeHtml() features testsuite', function () {
       it(suite[i].name.replace(/-/g, ' '), assertion(suite[i], converter));
     }
   });
+
+  /** test moreStyling option **/
+  describe('moreStyling option', function () {
+    var converter,
+        suite = moreStyling;
+
+    for (var i = 0; i < suite.length; ++i) {
+      converter = new showdown.Converter({moreStyling: true, tasklists: true});
+      it(suite[i].name.replace(/-/g, ' '), assertion(suite[i], converter));
+    }
+  });
+
 });

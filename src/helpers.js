@@ -47,7 +47,15 @@ showdown.helper.isFunction = function (a) {
  */
 showdown.helper.isArray = function (a) {
   'use strict';
-  return Array.isArray(a);
+  let isArray;
+  if (!Array.isArray) {
+    isArray = function (arg) {
+      return Object.prototype.toString.call(arg) === '[object Array]';
+    };
+  } else {
+    isArray = Array.isArray;
+  }
+  return isArray(a);
 };
 
 /**
@@ -132,7 +140,7 @@ showdown.helper.escapeCharactersCallback = escapeCharactersCallback;
  * @param {string} text
  * @param {string} charsToEscape
  * @param {boolean} afterBackslash
- * @returns {XML|string|void|*}
+ * @returns {string|void|*}
  */
 showdown.helper.escapeCharacters = function (text, charsToEscape, afterBackslash) {
   'use strict';
@@ -298,7 +306,7 @@ showdown.helper.regexIndexOf = function (str, regex, fromIndex) {
   if (!showdown.helper.isString(str)) {
     throw 'InvalidArgumentError: first parameter of showdown.helper.regexIndexOf function must be a string';
   }
-  if (regex instanceof RegExp === false) {
+  if (!(regex instanceof RegExp)) {
     throw 'InvalidArgumentError: second parameter of showdown.helper.regexIndexOf function must be an instance of RegExp';
   }
   var indexOf = str.substring(fromIndex || 0).search(regex);
@@ -320,11 +328,48 @@ showdown.helper.splitAtIndex = function (str, index) {
   return [str.substring(0, index), str.substring(index)];
 };
 
+
+/**
+ * MurmurHash3's mixing function
+ * https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript/47593316#47593316
+ *
+ * @param {string} string
+ * @returns {Number}
+ */
+/*jshint bitwise: false*/
+function xmur3 (str) {
+  for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = h << 13 | h >>> 19;
+  }
+  return function () {
+    h = Math.imul(h ^ h >>> 16, 2246822507);
+    h = Math.imul(h ^ h >>> 13, 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+
+/**
+ * Random Number Generator
+ * https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript/47593316#47593316
+ *
+ * @param {Number} seed
+ * @returns {Number}
+ */
+/*jshint bitwise: false*/
+function mulberry32 (a) {
+  return function () {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
 /**
  * Obfuscate an e-mail address through the use of Character Entities,
  * transforming ASCII characters into their equivalent decimal or hex entities.
  *
- * Since it has a random component, subsequent calls to this function produce different results
  *
  * @param {string} mail
  * @returns {string}
@@ -343,12 +388,15 @@ showdown.helper.encodeEmailAddress = function (mail) {
     }
   ];
 
+  // RNG seeded with mail, so that we can get determined results for each email.
+  var rand = mulberry32(xmur3(mail));
+
   mail = mail.replace(/./g, function (ch) {
     if (ch === '@') {
       // this *must* be encoded. I insist.
-      ch = encode[Math.floor(Math.random() * 2)](ch);
+      ch = encode[Math.floor(rand() * 2)](ch);
     } else {
-      var r = Math.random();
+      var r = rand();
       // roughly 10% raw, 45% hex, 45% dec
       ch = (
         r > 0.9 ? encode[2](ch) : r > 0.45 ? encode[1](ch) : encode[0](ch)
@@ -361,10 +409,53 @@ showdown.helper.encodeEmailAddress = function (mail) {
 };
 
 /**
+ * String.prototype.repeat polyfill
  *
- * @param str
- * @param targetLength
- * @param padString
+ * @param {string} str
+ * @param {int} count
+ * @returns {string}
+ */
+showdown.helper.repeat = function (str, count) {
+  'use strict';
+  // use built-in method if it's available
+  if (!showdown.helper.isUndefined(String.prototype.repeat)) {
+    return str.repeat(count);
+  }
+  str = '' + str;
+  if (count < 0) {
+    throw new RangeError('repeat count must be non-negative');
+  }
+  if (count === Infinity) {
+    throw new RangeError('repeat count must be less than infinity');
+  }
+  count = Math.floor(count);
+  if (str.length === 0 || count === 0) {
+    return '';
+  }
+  // Ensuring count is a 31-bit integer allows us to heavily optimize the
+  // main part. But anyway, most current (August 2014) browsers can't handle
+  // strings 1 << 28 chars or longer, so:
+  /*jshint bitwise: false*/
+  if (str.length * count >= 1 << 28) {
+    throw new RangeError('repeat count must not overflow maximum string size');
+  }
+  /*jshint bitwise: true*/
+  var maxCount = str.length * count;
+  count = Math.floor(Math.log(count) / Math.log(2));
+  while (count) {
+    str += str;
+    count--;
+  }
+  str += str.substring(0, maxCount - str.length);
+  return str;
+};
+
+/**
+ * String.prototype.padEnd polyfill
+ *
+ * @param {string} str
+ * @param {int} targetLength
+ * @param {string} [padString]
  * @returns {string}
  */
 showdown.helper.padEnd = function padEnd (str, targetLength, padString) {
@@ -379,7 +470,7 @@ showdown.helper.padEnd = function padEnd (str, targetLength, padString) {
   } else {
     targetLength = targetLength - str.length;
     if (targetLength > padString.length) {
-      padString += padString.repeat(targetLength / padString.length); //append to original to ensure we are longer than needed
+      padString += showdown.helper.repeat(padString, targetLength / padString.length); //append to original to ensure we are longer than needed
     }
     return String(str) + padString.slice(0,targetLength);
   }
@@ -523,6 +614,26 @@ if (typeof (console) === 'undefined') {
       'use strict';
       throw msg;
     }
+  };
+}
+
+// Math.imul() polyfill
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
+if (!Math.imul) {
+  Math.imul = function (opA, opB) {
+    opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
+    // floating points give us 53 bits of precision to work with plus 1 sign bit
+    // automatically handled for our convienence:
+    // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
+    //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+    var result = (opA & 0x003fffff) * opB;
+    // 2. We can remove an integer coersion from the statement above because:
+    //    0x1fffff7fc00001 + 0xffc00000 = 0x1fffffff800001
+    //    0x1fffffff800001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+    if (opA & 0xffc00000 /*!== 0*/) {
+      result += (opA & 0xffc00000) * opB | 0;
+    }
+    return result | 0;
   };
 }
 
